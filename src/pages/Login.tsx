@@ -28,13 +28,21 @@ export default function Login() {
     e.preventDefault()
     setSubmitting(true)
     setError(null)
-    const result = await supabase.auth.signInWithPassword({ email, password })
-    if (result.error) {
-      setError('Credenciais inválidas. Tenta de novo.')
+    try {
+      const result = await supabase.auth.signInWithPassword({ email, password })
+      if (result.error) {
+        // Mostra o erro REAL do Supabase para debug — depois voltamos a uma
+        // mensagem genérica.
+        const detail = `${result.error.message} (status: ${result.error.status ?? '?'})`
+        setError(detail)
+        setSubmitting(false)
+      } else {
+        setSuccess(true)
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(`Erro inesperado: ${msg}`)
       setSubmitting(false)
-    } else {
-      // sucesso — anima o R a abrir antes de a app redirigir
-      setSuccess(true)
     }
   }
 
