@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import DespesaForm from '@/components/DespesaForm'
+import CapturaExpress from '@/components/CapturaExpress'
 import VoltarHub from '@/components/VoltarHub'
 
 const eur = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
@@ -58,6 +59,7 @@ export default function Painel() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [capturando, setCapturando] = useState(false)
+  const [fallbackForm, setFallbackForm] = useState(false)
 
   async function load() {
     const now = new Date()
@@ -365,12 +367,27 @@ export default function Painel() {
       )}
 
       {capturando && (
+        <CapturaExpress
+          onClose={() => setCapturando(false)}
+          onSaved={(despesaId) => {
+            setCapturando(false)
+            if (despesaId === undefined) {
+              // fallback: abrir form completo
+              setFallbackForm(true)
+            } else {
+              load()
+            }
+          }}
+        />
+      )}
+
+      {fallbackForm && (
         <DespesaForm
           despesa={null}
-          autoCapture={true}
-          onClose={() => setCapturando(false)}
+          autoCapture={false}
+          onClose={() => setFallbackForm(false)}
           onSaved={async () => {
-            setCapturando(false)
+            setFallbackForm(false)
             await load()
           }}
         />
