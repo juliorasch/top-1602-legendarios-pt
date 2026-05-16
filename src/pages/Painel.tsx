@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import DespesaForm from '@/components/DespesaForm'
+import VoltarHub from '@/components/VoltarHub'
 
 const eur = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
 const mesAno = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' })
@@ -211,6 +212,8 @@ export default function Painel() {
 
   return (
     <div>
+      <VoltarHub destino="Família" para="/familia" />
+
       <div className="flex items-center gap-3 mb-3">
         <span className="block h-px w-7 bg-gold" />
         <span className="text-gold text-[11px] tracking-editorial-wide uppercase">

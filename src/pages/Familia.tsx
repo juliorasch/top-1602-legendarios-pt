@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import VoltarHub from '@/components/VoltarHub'
 import type { Database } from '@/types/database'
 
 type TipoDespesa = Database['public']['Enums']['despesa_familia_tipo']
@@ -91,6 +92,8 @@ export default function Familia() {
 
   return (
     <div>
+      <VoltarHub destino="Empresa" para="/painel" />
+
       <div className="flex items-start justify-between mb-12 gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 mb-3">
