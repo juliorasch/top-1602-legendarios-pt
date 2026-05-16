@@ -303,16 +303,16 @@ export default function DespesaForm({ despesa, onClose, onSaved, autoCapture }: 
             ) : (
               <label className="flex flex-col items-center justify-center gap-2 border border-dashed border-line hover:border-gold rounded-editorial py-8 px-4 cursor-pointer transition-colors bg-bg">
                 <span className="text-gold text-[11px] tracking-editorial-wide uppercase">
-                  {uploadingFoto ? 'A carregar…' : 'Capturar ou escolher ficheiro'}
+                  {uploadingFoto ? 'A carregar…' : 'Tirar foto, escolher da galeria ou ficheiro'}
                 </span>
                 <span className="text-muted text-xs italic text-center">
-                  No telemóvel abre a câmara. IA analisa automaticamente. Aceita JPG, PNG ou PDF.
+                  No telemóvel: câmara OU galeria. No computador: qualquer
+                  ficheiro. IA analisa automaticamente. JPG, PNG ou PDF.
                 </span>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*,application/pdf"
-                  capture="environment"
                   onChange={handleFotoChange}
                   disabled={uploadingFoto}
                   className="hidden"
