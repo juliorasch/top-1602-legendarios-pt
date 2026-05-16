@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import DespesaForm from '@/components/DespesaForm'
 import CapturaExpress from '@/components/CapturaExpress'
+import RaschMark from '@/components/RaschMark'
 import VoltarHub from '@/components/VoltarHub'
 
 const eur = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
@@ -216,16 +217,21 @@ export default function Painel() {
     <div>
       <VoltarHub destino="Família" para="/familia" />
 
-      <div className="flex items-center gap-3 mb-3">
-        <span className="block h-px w-7 bg-gold" />
-        <span className="text-gold text-[11px] tracking-editorial-wide uppercase">
-          02 — Empresa
-        </span>
+      <div className="flex items-start gap-5 mb-10">
+        <RaschMark size={84} className="shrink-0 mt-1 hidden sm:block" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="block h-px w-7 bg-gold" />
+            <span className="text-gold text-[11px] tracking-editorial-wide uppercase">
+              02 — Empresa
+            </span>
+          </div>
+          <h1 className="font-display text-4xl text-cream-bright leading-tight mb-2">
+            Rasch Remodeling <span className="italic text-gold">LDA.</span>
+          </h1>
+          <p className="text-muted text-sm italic capitalize">{tituloMes}</p>
+        </div>
       </div>
-      <h1 className="font-display text-4xl text-cream-bright leading-tight mb-2">
-        Rasch Remodeling <span className="italic text-gold">LDA.</span>
-      </h1>
-      <p className="text-muted text-sm italic mb-10 capitalize">{tituloMes}</p>
 
       {/* HERO: Capturar fatura — destaque máximo */}
       <button

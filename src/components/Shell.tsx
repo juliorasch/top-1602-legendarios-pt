@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import RaschMark from './RaschMark'
 
 type Props = { children: ReactNode }
 
@@ -25,7 +26,11 @@ export default function Shell({ children }: Props) {
     <div className="min-h-screen bg-bg">
       <header className="border-b border-line">
         <div className="max-w-6xl mx-auto px-6 pt-6 pb-2 flex items-center justify-between">
-          <Link to="/" className="font-display text-xl text-cream-bright">
+          <Link
+            to="/"
+            className="group flex items-center gap-3 font-display text-xl text-cream-bright hover:text-gold transition-colors"
+          >
+            <RaschMark size={28} showAccent={false} className="shrink-0 transition-transform group-hover:scale-110" />
             Daily <span className="italic text-gold">Rasch.</span>
           </Link>
           <button
