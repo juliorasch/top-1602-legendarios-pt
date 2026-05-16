@@ -8,7 +8,9 @@ import {
 } from '@/lib/storage'
 import type { Database } from '@/types/database'
 
-type ObraLite = Pick<Database['public']['Tables']['obras']['Row'], 'id' | 'descricao'>
+type ObraLite = Pick<Database['public']['Tables']['obras']['Row'], 'id' | 'descricao'> & {
+  cliente: { nome: string } | null
+}
 type DespesaRow = Database['public']['Tables']['despesas']['Row']
 
 type AnaliseIA = {
@@ -36,6 +38,7 @@ type Props = {
 export default function DespesaForm({ despesa, onClose, onSaved, autoCapture }: Props) {
   const [obras, setObras] = useState<ObraLite[]>([])
   const [obraId, setObraId] = useState(despesa?.obra_id ?? '')
+  const [obraHint, setObraHint] = useState('')
   const [fornecedor, setFornecedor] = useState(despesa?.fornecedor ?? '')
   const [nifFornecedor, setNifFornecedor] = useState(despesa?.nif_fornecedor ?? '')
   const [valor, setValor] = useState(despesa ? String(despesa.valor) : '')
@@ -52,17 +55,30 @@ export default function DespesaForm({ despesa, onClose, onSaved, autoCapture }: 
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Carrega obras para o dropdown.
+  // Carrega obras (com cliente) para o dropdown + fuzzy match da hint.
   useEffect(() => {
     supabase
       .from('obras')
-      .select('id, descricao')
+      .select('id, descricao, cliente:clientes(nome)')
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (error) return
-        setObras(data ?? [])
+        setObras((data as ObraLite[] | null) ?? [])
       })
   }, [])
+
+  // Fuzzy match da hint contra obras — corre sempre que hint OU obras mudam.
+  // A hint do user prevalece sobre a sugestão da IA.
+  useEffect(() => {
+    const hint = obraHint.trim().toLowerCase()
+    if (!hint || obras.length === 0) return
+    const match = obras.find((o) => {
+      const desc = o.descricao.toLowerCase()
+      const cli = o.cliente?.nome.toLowerCase() ?? ''
+      return desc.includes(hint) || cli.includes(hint)
+    })
+    if (match) setObraId(match.id)
+  }, [obraHint, obras])
 
   // Auto-trigger do picker se autoCapture estiver activo.
   useEffect(() => {
@@ -312,23 +328,46 @@ export default function DespesaForm({ despesa, onClose, onSaved, autoCapture }: 
             )}
           </div>
 
-          <label className="block">
-            <span className="text-[11px] tracking-editorial-wide uppercase text-gold-dim block mb-2">
-              Obra
-            </span>
-            <select
-              value={obraId}
-              onChange={(e) => setObraId(e.target.value)}
-              className="w-full bg-bg border border-line focus:border-gold rounded-editorial px-4 py-3 text-cream-bright text-sm outline-none transition-colors"
-            >
-              <option value="">— Sem obra associada —</option>
-              {obras.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.descricao.length > 60 ? `${o.descricao.slice(0, 60)}…` : o.descricao}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="space-y-3">
+            <label className="block">
+              <span className="text-[11px] tracking-editorial-wide uppercase text-gold-dim block mb-2">
+                Para que obra? <span className="normal-case italic text-muted">(dica rápida)</span>
+              </span>
+              <input
+                type="text"
+                value={obraHint}
+                onChange={(e) => setObraHint(e.target.value)}
+                placeholder="ex: Catarina, cozinha, telhado…"
+                className="w-full bg-bg border border-line focus:border-gold rounded-editorial px-4 py-3 text-cream-bright text-sm outline-none transition-colors"
+              />
+              <span className="text-muted text-xs italic mt-1 block">
+                Escreve nome do cliente, parte da obra, o que vier à cabeça —
+                fazemos match com a lista abaixo.
+              </span>
+            </label>
+
+            <label className="block">
+              <span className="text-[11px] tracking-editorial-wide uppercase text-gold-dim block mb-2">
+                Obra associada
+              </span>
+              <select
+                value={obraId}
+                onChange={(e) => setObraId(e.target.value)}
+                className="w-full bg-bg border border-line focus:border-gold rounded-editorial px-4 py-3 text-cream-bright text-sm outline-none transition-colors"
+              >
+                <option value="">— Sem obra associada —</option>
+                {obras.map((o) => {
+                  const cli = o.cliente?.nome ? `${o.cliente.nome} — ` : ''
+                  const label = `${cli}${o.descricao}`
+                  return (
+                    <option key={o.id} value={o.id}>
+                      {label.length > 60 ? `${label.slice(0, 60)}…` : label}
+                    </option>
+                  )
+                })}
+              </select>
+            </label>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <label className="block">
