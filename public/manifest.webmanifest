@@ -1,0 +1,21 @@
+{
+  "name": "Daily Rasch",
+  "short_name": "Daily Rasch",
+  "description": "Gestão integrada da Rasch Remodeling LDA — empresa e família.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0E1F1D",
+  "theme_color": "#0E1F1D",
+  "lang": "pt-PT",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
