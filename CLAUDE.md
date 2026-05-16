@@ -202,6 +202,30 @@ Os ecrãs estão mockados e aprovados pelo Rasch. Manter coerência visual.
 > 2. Secrets: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_TO` (lista separada por vírgulas), `CRON_SECRET` (token aleatório).
 > 3. `supabase functions deploy email-relatorio-semanal`
 > 4. Agendar via Supabase Cron (Dashboard → Database → Cron Jobs) — recomendado: segundas 09:00 Europe/Lisbon, com `Authorization: Bearer <CRON_SECRET>`.
+>
+> **Para activar a integração iziBizi (Fase 3, ainda em construção):**
+> 1. Aplicar `supabase/migrations/0003_izibizi_session.sql` (cria a tabela de cache de tokens).
+> 2. Secrets do projecto Supabase:
+>    - `IZIBIZI_CLIENT_ID` — identificador OAuth obtido em iziBizi → Empresa → Configurações → Dados API
+>    - `IZIBIZI_CLIENT_SECRET` — segredo correspondente
+>    - `IZIBIZI_OAUTH_URL` — ex: `https://app3.business-pt.cegid.cloud/oauth`
+>    - `IZIBIZI_API_URL` — ex: `https://api3.business-pt.cegid.cloud`
+>    - (opcional) `IZIBIZI_FISCAL_YEAR_ID` — descobre-se via diag (passo 4 abaixo)
+> 3. `supabase functions deploy izibizi-diag`
+> 4. Testar OAuth + listar exercícios fiscais (sem `IZIBIZI_FISCAL_YEAR_ID`):
+>    ```
+>    curl -X POST <project-url>/functions/v1/izibizi-diag \
+>      -H "Authorization: Bearer $CRON_SECRET" \
+>      -d '{"step":"fiscal-years"}'
+>    ```
+> 5. Copiar o `id` do exercício fiscal desejado para o secret `IZIBIZI_FISCAL_YEAR_ID`.
+> 6. Validar uma amostra real:
+>    ```
+>    curl -X POST <project-url>/functions/v1/izibizi-diag \
+>      -H "Authorization: Bearer $CRON_SECRET" \
+>      -d '{"step":"all"}'
+>    ```
+>    A response inclui a forma exacta dos JSON devolvidos por `commercial_purchases_documents` e `suppliers` — a partir daí construo as edge functions tipadas + UI.
 
 ### Fase 4 — Polimento (semanas 7-8)
 
