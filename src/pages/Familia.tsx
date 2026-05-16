@@ -84,6 +84,24 @@ export default function Familia() {
     return { entradas: tEntradas, despesas: tDespesas, saldo: tEntradas - tDespesas }
   }, [entradas, despesas])
 
+  // Agrupar despesas por tipo (fixa / variável), com subtotais.
+  const despesasFixas = useMemo(
+    () => despesas.filter((d) => d.tipo === 'fixa'),
+    [despesas],
+  )
+  const despesasVariaveis = useMemo(
+    () => despesas.filter((d) => d.tipo === 'variavel'),
+    [despesas],
+  )
+  const totalFixas = useMemo(
+    () => despesasFixas.reduce((a, d) => a + Number(d.valor), 0),
+    [despesasFixas],
+  )
+  const totalVariaveis = useMemo(
+    () => despesasVariaveis.reduce((a, d) => a + Number(d.valor), 0),
+    [despesasVariaveis],
+  )
+
   function changeMonth(delta: number) {
     setRef((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
   }
@@ -178,49 +196,28 @@ export default function Familia() {
       {error && <p className="text-negative text-sm">{error}</p>}
 
       {!loading && !error && tab === 'despesa' && (
-        <div className="space-y-3">
-          {despesas.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => setEditing({ kind: 'despesa', row: d })}
-              className="w-full text-left bg-bg-card border border-line hover:border-gold rounded-editorial p-5 transition-colors"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={`text-[11px] tracking-editorial-wide uppercase ${
-                      d.tipo === 'fixa' ? 'text-gold' : 'text-gold-dim'
-                    }`}>
-                      {d.tipo === 'fixa' ? 'Fixa' : 'Variável'}
-                    </span>
-                    {d.categoria && (
-                      <span className="text-muted text-[11px] tracking-editorial-wide uppercase">
-                        · {d.categoria}
-                      </span>
-                    )}
-                    {d.recorrente && (
-                      <span className="text-gold-dim text-[11px] tracking-editorial-wide uppercase">
-                        · Recorrente
-                      </span>
-                    )}
-                  </div>
-                  <div className="font-display text-cream-bright text-base leading-snug">
-                    {d.descricao}
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-negative tabular-nums font-display">
-                    {eur.format(Number(d.valor))}
-                  </div>
-                  <div className="text-muted text-xs mt-1">{formatDate(d.data)}</div>
-                </div>
-              </div>
-            </button>
-          ))}
+        <div className="space-y-10">
+          <GrupoDespesas
+            titulo="Fixas"
+            subtitulo="contas recorrentes — todos os meses"
+            items={despesasFixas}
+            total={totalFixas}
+            accent="text-gold"
+            onEdit={(d) => setEditing({ kind: 'despesa', row: d })}
+            emptyText="Sem despesas fixas registadas neste mês."
+          />
+          <GrupoDespesas
+            titulo="Variáveis"
+            subtitulo="gastos pontuais — só este mês"
+            items={despesasVariaveis}
+            total={totalVariaveis}
+            accent="text-gold-dim"
+            onEdit={(d) => setEditing({ kind: 'despesa', row: d })}
+            emptyText="Sem despesas variáveis neste mês."
+          />
           {despesas.length === 0 && (
             <p className="text-muted text-sm italic py-8 text-center">
-              Sem despesas neste mês.
+              Sem despesas neste mês. Clica em "Nova despesa" no topo.
             </p>
           )}
         </div>
@@ -281,6 +278,90 @@ export default function Familia() {
         />
       )}
     </div>
+  )
+}
+
+function GrupoDespesas({
+  titulo,
+  subtitulo,
+  items,
+  total,
+  accent,
+  onEdit,
+  emptyText,
+}: {
+  titulo: string
+  subtitulo: string
+  items: Despesa[]
+  total: number
+  accent: string
+  onEdit: (d: Despesa) => void
+  emptyText: string
+}) {
+  return (
+    <section>
+      <div className="flex items-baseline justify-between gap-4 mb-4 pb-3 border-b border-line">
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="block h-px w-7 bg-gold" />
+            <span className={`text-[11px] tracking-editorial-wide uppercase ${accent}`}>
+              {titulo}
+            </span>
+            <span className="text-muted text-[11px] tabular-nums">({items.length})</span>
+          </div>
+          <p className="text-muted text-xs italic mt-1 pl-10">{subtitulo}</p>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-[11px] tracking-editorial-wide uppercase text-gold-dim mb-1">
+            Subtotal
+          </div>
+          <div className="font-display text-xl tabular-nums text-negative">
+            {eur.format(total)}
+          </div>
+        </div>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="text-muted text-sm italic py-4 text-center">{emptyText}</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => onEdit(d)}
+              className="w-full text-left bg-bg-card border border-line hover:border-gold rounded-editorial p-4 transition-colors"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="font-display text-cream-bright text-base leading-snug">
+                    {d.descricao}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {d.categoria && (
+                      <span className="text-muted text-[11px] tracking-editorial-wide uppercase">
+                        {d.categoria}
+                      </span>
+                    )}
+                    {d.recorrente && (
+                      <span className="text-gold-dim text-[11px] tracking-editorial-wide uppercase">
+                        {d.categoria ? '· ' : ''}Recorrente
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-negative tabular-nums font-display">
+                    {eur.format(Number(d.valor))}
+                  </div>
+                  <div className="text-muted text-xs mt-1">{formatDate(d.data)}</div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }
 
