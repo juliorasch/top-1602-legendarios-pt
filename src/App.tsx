@@ -8,6 +8,7 @@ import Painel from '@/pages/Painel'
 import Clientes from '@/pages/Clientes'
 import Orcamentos from '@/pages/Orcamentos'
 import Obras from '@/pages/Obras'
+import ObraDetail from '@/pages/ObraDetail'
 import Despesas from '@/pages/Despesas'
 import Decisoes from '@/pages/Decisoes'
 import Familia from '@/pages/Familia'
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/orcamentos" element={<Orcamentos />} />
           <Route path="/obras" element={<Obras />} />
+          <Route path="/obras/:id" element={<ObraDetail />} />
           <Route path="/despesas" element={<Despesas />} />
           <Route path="/decisoes" element={<Decisoes />} />
           <Route path="/familia" element={<Familia />} />
