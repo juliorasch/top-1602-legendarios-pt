@@ -196,11 +196,17 @@ Os ecrãs estão mockados e aprovados pelo Rasch. Manter coerência visual.
 > 1. Aplicar `supabase/migrations/0002_storage_faturas.sql` no SQL Editor (cria bucket `faturas` + policies).
 > 2. Definir o secret no projecto Supabase: `supabase secrets set ANTHROPIC_API_KEY=sk-ant-...`
 > 3. Fazer deploy da edge function: `supabase functions deploy analisar-fatura`
+>
+> **Para activar o email semanal:**
+> 1. Conta na Resend (https://resend.com) com domínio verificado para o `from`.
+> 2. Secrets: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_TO` (lista separada por vírgulas), `CRON_SECRET` (token aleatório).
+> 3. `supabase functions deploy email-relatorio-semanal`
+> 4. Agendar via Supabase Cron (Dashboard → Database → Cron Jobs) — recomendado: segundas 09:00 Europe/Lisbon, com `Authorization: Bearer <CRON_SECRET>`.
 
 ### Fase 4 — Polimento (semanas 7-8)
 
 - [x] Relatório semanal (dashboard `/relatorio` — secção "esta semana" + "próximos 7 dias")
-- [ ] Relatório semanal por email (agendar edge function + integração de envio)
+- [x] Relatório semanal por email (edge function `email-relatorio-semanal`, renderiza HTML editorial e envia via Resend — falta agendar cron + secrets)
 - [x] Notificações de follow-up de orçamentos (Painel — secção "Atenção")
 - [x] Alertas de decisões pendentes (Painel — secção "Atenção", inclui obras com prazo)
 - [x] Vista de Obra dedicada (`/obras/:id` — KPIs, despesas + decisões ligadas, margem)
