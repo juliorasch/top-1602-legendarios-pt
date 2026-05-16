@@ -181,6 +181,8 @@ Os ecrãs estão mockados e aprovados pelo Rasch. Manter coerência visual.
 - [x] CRUD de obras (Kanban 3 colunas, ligação a cliente + orçamento)
 - [x] CRUD de decisões (lista priorizada com toggle pendentes/resolvidas)
 - [x] Vista família (entradas + despesas, sumário do mês com saldo)
+- [x] CRUD de despesas (lista filtrável por obra/estado, total acumulado)
+- [x] Painel ligado a dados reais (KPIs empresa + saldo familiar do mês)
 
 ### Fase 3 — Inteligência (semanas 5-6)
 
