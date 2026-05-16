@@ -63,7 +63,7 @@ async function fetchClientCredentialsToken(): Promise<TokenResponse> {
       'Content-Type': 'application/x-www-form-urlencoded',
       Authorization: basicAuthHeader(),
     },
-    body: 'grant_type=client_credentials',
+    body: 'grant_type=client_credentials&scope=commercial',
   })
   if (!resp.ok) {
     throw new Error(`OAuth /token falhou (${resp.status}): ${await resp.text()}`)
@@ -78,7 +78,7 @@ async function refreshAccessToken(refreshToken: string): Promise<TokenResponse |
       'Content-Type': 'application/x-www-form-urlencoded',
       Authorization: basicAuthHeader(),
     },
-    body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refreshToken)}`,
+    body: `grant_type=refresh_token&scope=commercial&refresh_token=${encodeURIComponent(refreshToken)}`,
   })
   if (!resp.ok) return null
   return (await resp.json()) as TokenResponse
