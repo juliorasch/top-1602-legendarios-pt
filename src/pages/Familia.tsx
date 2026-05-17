@@ -33,6 +33,23 @@ function monthBounds(ref: Date): { start: string; end: string } {
   return { start: iso(start), end: iso(end) }
 }
 
+function dedupeFixas(rows: Despesa[]): Despesa[] {
+  // Fixas duplicadas (legacy de quando se clonava do mês anterior) podem
+  // inflacionar o total. Agrupa por descrição (case-insensitive) e fica
+  // com a mais recente — assumida como fonte de verdade.
+  const porChave = new Map<string, Despesa>()
+  for (const row of rows) {
+    const chave = row.descricao.trim().toLowerCase()
+    const existente = porChave.get(chave)
+    if (!existente || row.data > existente.data) {
+      porChave.set(chave, row)
+    }
+  }
+  return [...porChave.values()].sort((a, b) =>
+    a.descricao.localeCompare(b.descricao, 'pt'),
+  )
+}
+
 export default function Familia() {
   const [ref, setRef] = useState(() => {
     const now = new Date()
@@ -85,7 +102,10 @@ export default function Familia() {
       setError(eFixas.error.message)
     } else {
       setEntradas(eEntradas.data ?? [])
-      setDespesas([...(eFixas.data ?? []), ...(eVariaveis.data ?? [])])
+      // Dedupe: se houver várias fixas com a mesma descrição (legacy de
+      // quando se clonava entre meses), fica só a mais recente.
+      const fixasUnicas = dedupeFixas(eFixas.data ?? [])
+      setDespesas([...fixasUnicas, ...(eVariaveis.data ?? [])])
     }
     setLoading(false)
   }

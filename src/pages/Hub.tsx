@@ -32,6 +32,20 @@ function monthBounds(): { start: string; end: string } {
   return { start, end }
 }
 
+type FixaLite = { descricao: string; valor: number; data: string }
+
+function dedupeFixasPorDescricao(rows: FixaLite[]): FixaLite[] {
+  const porChave = new Map<string, FixaLite>()
+  for (const row of rows) {
+    const chave = row.descricao.trim().toLowerCase()
+    const existente = porChave.get(chave)
+    if (!existente || row.data > existente.data) {
+      porChave.set(chave, row)
+    }
+  }
+  return [...porChave.values()]
+}
+
 export default function Hub() {
   const [stats, setStats] = useState<Stats>(STATS_ZERO)
   const [loading, setLoading] = useState(true)
@@ -46,13 +60,28 @@ export default function Hub() {
       supabase.from('decisoes').select('estado, prioridade'),
       supabase.from('despesas').select('confirmado_pelo_user'),
       supabase.from('entradas_familia').select('valor').gte('data', start).lt('data', end),
-      supabase.from('despesas_familia').select('valor').gte('data', start).lt('data', end),
+      // Despesas familiares: variáveis do mês + todas as fixas activas até este mês.
+      // Mesma lógica da página Família — assim os números batem certo.
+      supabase
+        .from('despesas_familia')
+        .select('descricao, valor, tipo, data')
+        .eq('tipo', 'variavel')
+        .gte('data', start)
+        .lt('data', end),
+      supabase
+        .from('despesas_familia')
+        .select('descricao, valor, tipo, data')
+        .eq('tipo', 'fixa')
+        .lt('data', end),
     ])
-      .then(([o, ob, d, de, eFam, dFam]) => {
+      .then(([o, ob, d, de, eFam, dVar, dFix]) => {
         const entradasTotal =
           eFam.data?.reduce((a, r) => a + Number(r.valor), 0) ?? 0
-        const despesasTotal =
-          dFam.data?.reduce((a, r) => a + Number(r.valor), 0) ?? 0
+        const variaveisTotal =
+          dVar.data?.reduce((a, r) => a + Number(r.valor), 0) ?? 0
+        const fixasUnicas = dedupeFixasPorDescricao(dFix.data ?? [])
+        const fixasTotal = fixasUnicas.reduce((a, r) => a + Number(r.valor), 0)
+        const despesasTotal = variaveisTotal + fixasTotal
         setStats({
           orcamentosAbertos:
             o.data?.filter(
