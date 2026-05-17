@@ -1,7 +1,7 @@
 import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
-import { resolveFotoUrl, uploadFatura } from '@/lib/storage'
+import { deleteFatura, resolveFotoUrl, uploadFatura } from '@/lib/storage'
 import type { Database } from '@/types/database'
 
 type ObraLite = Pick<Database['public']['Tables']['obras']['Row'], 'id' | 'descricao'> & {
@@ -21,15 +21,18 @@ type AnaliseIA = {
 
 type Step = 'pick' | 'uploading' | 'analyzing' | 'saving' | 'done' | 'error' | 'fallback'
 
+// Estados em que a foto ainda não está ligada a uma despesa — se o user
+// fechar o modal nestes, há que limpar o ficheiro no storage.
+const STEPS_FOTO_ORFA: Step[] = ['analyzing', 'saving', 'error', 'fallback']
+
 type Props = {
-  obraHint?: string
   onClose: () => void
   onSaved: (despesaId?: string) => void
 }
 
 const eur = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
 
-export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Props) {
+export default function CapturaExpress({ onClose, onSaved }: Props) {
   const [step, setStep] = useState<Step>('pick')
   const [fotoPath, setFotoPath] = useState<string | null>(null)
   const [fotoPreviewUrl, setFotoPreviewUrl] = useState<string | null>(null)
@@ -37,7 +40,6 @@ export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Prop
   const [savedDespesaId, setSavedDespesaId] = useState<string | null>(null)
   const [obraSelecionada, setObraSelecionada] = useState<ObraLite | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [hint, setHint] = useState(obraHint)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Abre o picker automaticamente ao montar.
@@ -60,6 +62,20 @@ export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Prop
       cancelled = true
     }
   }, [fotoPath])
+
+  async function discardFoto(path: string | null): Promise<void> {
+    if (!path) return
+    await deleteFatura(path).catch(() => undefined)
+  }
+
+  function handleClose() {
+    // Se a foto não chegou a ser ligada a uma despesa, apaga-a para não
+    // deixar lixo no storage.
+    if (STEPS_FOTO_ORFA.includes(step) && fotoPath) {
+      void discardFoto(fotoPath)
+    }
+    onClose()
+  }
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -90,24 +106,18 @@ export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Prop
       // 3. Validar campos mínimos para auto-save.
       if (!ai.fornecedor || !ai.fornecedor.trim() || typeof ai.valor !== 'number') {
         // IA não extraiu o essencial — cair para fallback (form normal).
+        // A foto vai ser perdida porque o DespesaForm pede novo upload;
+        // limpa-se aqui para evitar órfã no storage.
+        await discardFoto(path)
+        setFotoPath(null)
         setStep('fallback')
         return
       }
 
-      // 4. Resolver obra: fuzzy hint > IA > nenhuma
+      // 4. Resolver obra: usar a sugestão da IA, se houver.
       const obras = await fetchObrasEmCurso()
       let obraId: string | null = null
-
-      if (hint.trim() && obras.length > 0) {
-        const h = hint.trim().toLowerCase()
-        const match = obras.find((o) => {
-          const desc = o.descricao.toLowerCase()
-          const cli = o.cliente?.nome.toLowerCase() ?? ''
-          return desc.includes(h) || cli.includes(h)
-        })
-        if (match) obraId = match.id
-      }
-      if (!obraId && ai.obra_sugerida_id) {
+      if (ai.obra_sugerida_id) {
         const existe = obras.find((o) => o.id === ai.obra_sugerida_id)
         if (existe) obraId = existe.id
       }
@@ -143,6 +153,12 @@ export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Prop
       setSavedDespesaId(saved?.id ?? null)
       setStep('done')
     } catch (err) {
+      // Algo falhou após upload — a despesa não foi guardada. Limpa a foto
+      // imediatamente para não acumular lixo se o user clicar "Fechar".
+      if (fotoPath) {
+        await discardFoto(fotoPath)
+        setFotoPath(null)
+      }
       setError(err instanceof Error ? err.message : String(err))
       setStep('error')
     } finally {
@@ -171,7 +187,7 @@ export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Prop
           {step !== 'uploading' && step !== 'analyzing' && step !== 'saving' && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="text-muted text-[11px] tracking-editorial-wide uppercase hover:text-cream"
             >
               ✕
@@ -179,7 +195,8 @@ export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Prop
           )}
         </div>
 
-        {/* PICK: nada visível, o picker abre sozinho */}
+        {/* PICK: o picker abre sozinho. Se o user cancelar, dá-se uma porta
+            de saída para voltar a abrir sem fechar o modal. */}
         {step === 'pick' && (
           <>
             <h2 className="font-display text-2xl text-cream-bright mb-3">
@@ -196,24 +213,6 @@ export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Prop
               Abrir câmara / galeria
             </button>
           </>
-        )}
-
-        {/* Pre-photo: hint opcional */}
-        {step === 'pick' && (
-          <div className="mt-5">
-            <label className="block">
-              <span className="text-[11px] tracking-editorial-wide uppercase text-gold-dim block mb-2">
-                Dica de obra <span className="normal-case italic text-muted">(opcional)</span>
-              </span>
-              <input
-                type="text"
-                value={hint}
-                onChange={(e) => setHint(e.target.value)}
-                placeholder="ex: Catarina, cozinha…"
-                className="w-full bg-bg border border-line focus:border-gold rounded-editorial px-4 py-3 text-cream-bright text-sm outline-none transition-colors"
-              />
-            </label>
-          </div>
         )}
 
         {/* PROGRESSO */}
@@ -357,7 +356,7 @@ export default function CapturaExpress({ obraHint = '', onClose, onSaved }: Prop
             </p>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="w-full border border-gold text-gold py-3 text-[11px] tracking-editorial-wide uppercase rounded-editorial hover:bg-gold hover:text-bg transition-colors"
             >
               Fechar
