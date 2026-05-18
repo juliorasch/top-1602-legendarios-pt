@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Rasch Remodeling">
+  <rect width="820" height="260" fill="#0E1F1D" />
+  <g transform="translate(60, 40)">
+    <rect x="0" y="138" width="44" height="44" fill="#5A7A7E" opacity="0.92" />
+    <path d="M 36 16 L 120 16 L 176 52 L 92 112 L 180 184 L 152 184 L 92 124 L 36 124 Z" fill="#C9A961" transform="scale(1)" />
+  </g>
+  <text x="280" y="158"
+        font-family="'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-weight="700" font-size="118" fill="#E8E0D0" letter-spacing="-3">Rasch</text>
+  <text x="282" y="210"
+        font-family="'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-weight="400" font-size="46" fill="#E8E0D0" letter-spacing="-1">remodeling</text>
+</svg>

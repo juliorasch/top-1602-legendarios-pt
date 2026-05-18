@@ -16,8 +16,9 @@ type Props = {
 
 /**
  * Mark Rasch reutilizável — SVG inline, escala perfeita.
- * Interpretação geométrica do R com canto chanfrado + perna diagonal,
- * mais o pequeno quadrado de acento (opcional).
+ * R estilizado: stem vertical à esquerda, bowl que afunila para um vértice
+ * V no meio da haste, perna diagonal que sai desse mesmo vértice até ao
+ * canto inferior-direito. Quadrado de acento opcional no canto inferior-esquerdo.
  */
 export default function RaschMark({
   size = 40,
@@ -27,8 +28,8 @@ export default function RaschMark({
   className = '',
   parallax,
 }: Props) {
-  const accentX = 2 + (parallax?.x ?? 0) * 2
-  const accentY = 68 + (parallax?.y ?? 0) * 2
+  const accentX = 0 + (parallax?.x ?? 0) * 2
+  const accentY = 74 + (parallax?.y ?? 0) * 2
 
   return (
     <svg
@@ -42,12 +43,10 @@ export default function RaschMark({
       {showAccent && (
         <rect x={accentX} y={accentY} width="22" height="22" fill={accentColor} opacity="0.92" />
       )}
-      <g fill={color}>
-        {/* corpo superior do R com canto chanfrado */}
-        <path d="M 16 10 L 70 10 L 86 26 L 86 50 L 50 50 L 50 62 L 16 62 Z" />
-        {/* perna diagonal */}
-        <path d="M 50 50 L 64 50 L 92 92 L 78 92 Z" />
-      </g>
+      <path
+        d="M 18 8 L 60 8 L 88 26 L 46 56 L 90 92 L 76 92 L 46 62 L 18 62 Z"
+        fill={color}
+      />
     </svg>
   )
 }
