@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import Shell from '@/components/Shell'
 import Login from '@/pages/Login'
+import ResetSenha from '@/pages/ResetSenha'
 import Hub from '@/pages/Hub'
 import Painel from '@/pages/Painel'
 import Clientes from '@/pages/Clientes'
@@ -57,6 +58,7 @@ export default function App() {
           path="/login"
           element={session ? <Navigate to="/" replace /> : <Login />}
         />
+        <Route path="/reset-senha" element={<ResetSenha />} />
         <Route
           element={session ? <ProtectedLayout /> : <Navigate to="/login" replace />}
         >

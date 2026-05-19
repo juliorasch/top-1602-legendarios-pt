@@ -1,12 +1,16 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+type Mode = 'login' | 'reset'
+
 export default function Login() {
+  const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
   const [parallax, setParallax] = useState({ x: 0, y: 0 })
   const [logoHover, setLogoHover] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -42,6 +46,40 @@ export default function Login() {
     }
   }
 
+  async function handleResetRequest(e: FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    try {
+      const result = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-senha`,
+      })
+      if (result.error) {
+        setError('Não foi possível enviar o email. Verifica o endereço.')
+        setSubmitting(false)
+      } else {
+        setResetSent(true)
+        setSubmitting(false)
+      }
+    } catch {
+      setError('Não foi possível ligar ao servidor. Verifica a ligação.')
+      setSubmitting(false)
+    }
+  }
+
+  function switchToReset() {
+    setMode('reset')
+    setError(null)
+    setResetSent(false)
+    setPassword('')
+  }
+
+  function switchToLogin() {
+    setMode('login')
+    setError(null)
+    setResetSent(false)
+  }
+
   return (
     <div
       ref={containerRef}
@@ -57,7 +95,7 @@ export default function Login() {
         <div className="flex items-center gap-3 mb-6 justify-center">
           <span className="block h-px w-7 bg-gold" />
           <span className="text-gold text-[11px] tracking-editorial-wide uppercase">
-            01 — Entrada
+            {mode === 'reset' ? '01 — Recuperar acesso' : '01 — Entrada'}
           </span>
           <span className="block h-px w-7 bg-gold" />
         </div>
@@ -77,50 +115,131 @@ export default function Login() {
           </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-12 space-y-5">
-          <Field
-            label="Email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            autoComplete="email"
-            required
-          />
-          <Field
-            label="Palavra-passe"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            autoComplete="current-password"
-            required
-          />
-
-          {error && (
-            <p
-              className="text-negative text-xs tracking-wide text-center animate-pulse"
-              role="alert"
-            >
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting || success}
-            className="group relative w-full mt-4 overflow-hidden border border-gold text-gold py-3.5 text-[11px] tracking-editorial-wide uppercase rounded-editorial transition-all duration-300 hover:text-bg disabled:opacity-50"
-          >
-            <span
-              className={`absolute inset-0 bg-gold transition-transform duration-500 ${
-                submitting || success
-                  ? 'translate-x-0'
-                  : '-translate-x-full group-hover:translate-x-0'
-              }`}
+        {mode === 'login' ? (
+          <form onSubmit={handleSubmit} className="mt-12 space-y-5">
+            <Field
+              label="Email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              autoComplete="email"
+              required
             />
-            <span className="relative">
-              {success ? 'Bem-vindo' : submitting ? 'A abrir…' : 'Entrar'}
-            </span>
-          </button>
-        </form>
+            <Field
+              label="Palavra-passe"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
+              required
+            />
+
+            {error && (
+              <p
+                className="text-negative text-xs tracking-wide text-center animate-pulse"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting || success}
+              className="group relative w-full mt-4 overflow-hidden border border-gold text-gold py-3.5 text-[11px] tracking-editorial-wide uppercase rounded-editorial transition-all duration-300 hover:text-bg disabled:opacity-50"
+            >
+              <span
+                className={`absolute inset-0 bg-gold transition-transform duration-500 ${
+                  submitting || success
+                    ? 'translate-x-0'
+                    : '-translate-x-full group-hover:translate-x-0'
+                }`}
+              />
+              <span className="relative">
+                {success ? 'Bem-vindo' : submitting ? 'A abrir…' : 'Entrar'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={switchToReset}
+              className="block mx-auto text-muted hover:text-gold text-[11px] tracking-editorial-wide uppercase transition-colors pt-2"
+            >
+              Esqueci a palavra-passe
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleResetRequest} className="mt-12 space-y-5">
+            {resetSent ? (
+              <div className="text-center space-y-3 py-4">
+                <p className="text-cream-bright text-sm leading-relaxed">
+                  Enviámos um link para <span className="text-gold">{email}</span>.
+                </p>
+                <p className="text-muted text-xs leading-relaxed">
+                  Verifica a tua caixa de entrada (e a pasta de spam, por via das
+                  dúvidas). O link abre uma página para definires uma nova
+                  palavra-passe.
+                </p>
+                <button
+                  type="button"
+                  onClick={switchToLogin}
+                  className="block mx-auto text-gold hover:text-cream-bright text-[11px] tracking-editorial-wide uppercase transition-colors pt-4"
+                >
+                  ← Voltar ao login
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-cream text-xs leading-relaxed text-center">
+                  Escreve o teu email. Vamos enviar-te um link para definires uma
+                  nova palavra-passe.
+                </p>
+                <Field
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={setEmail}
+                  autoComplete="email"
+                  required
+                />
+
+                {error && (
+                  <p
+                    className="text-negative text-xs tracking-wide text-center animate-pulse"
+                    role="alert"
+                  >
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="group relative w-full mt-4 overflow-hidden border border-gold text-gold py-3.5 text-[11px] tracking-editorial-wide uppercase rounded-editorial transition-all duration-300 hover:text-bg disabled:opacity-50"
+                >
+                  <span
+                    className={`absolute inset-0 bg-gold transition-transform duration-500 ${
+                      submitting
+                        ? 'translate-x-0'
+                        : '-translate-x-full group-hover:translate-x-0'
+                    }`}
+                  />
+                  <span className="relative">
+                    {submitting ? 'A enviar…' : 'Enviar link'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={switchToLogin}
+                  className="block mx-auto text-muted hover:text-gold text-[11px] tracking-editorial-wide uppercase transition-colors pt-2"
+                >
+                  ← Voltar ao login
+                </button>
+              </>
+            )}
+          </form>
+        )}
 
         <p className="font-display italic text-muted text-sm mt-14 text-center tracking-wide">
           Trabalho bem feito constrói reputação sólida.
